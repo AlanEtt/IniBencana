@@ -28,7 +28,6 @@
         .marker-icon-container i {
             font-size: 18px;
         }
-        /* Ikon Banjir - 3 garis horizontal */
         .banjir-icon {
             display: flex;
             align-items: center;
@@ -42,41 +41,6 @@
             height: 4px;
             background-color: #3498db;
             box-shadow: 0 -8px 0 #3498db, 0 8px 0 #3498db;
-        }
-        /* Ikon Longsor - segitiga terbalik */
-        .longsor-icon {
-            width: 0;
-            height: 0;
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-top: 18px solid #e67e22;
-        }
-        /* Ikon Kebakaran - lingkaran merah dengan border putih */
-        .kebakaran-icon {
-            position: relative;
-            width: 24px;
-            height: 24px;
-        }
-        .kebakaran-icon::before {
-            content: "○";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #e74c3c;
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        /* Ikon Gunung Meletus - segitiga merah */
-        .gunung-meletus-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            font-size: 24px;
-            color: #c0392b;
         }
     </style>
 @endsection
@@ -190,28 +154,19 @@
                     html: '<div class="banjir-icon"></div>',
                     className: 'custom-div-icon'
                 },
-                'Longsor': {
-                    html: '<div class="longsor-icon"></div>',
-                    className: 'custom-div-icon'
-                },
-                'Kebakaran': {
-                    html: '<div class="kebakaran-icon"></div>',
-                    className: 'custom-div-icon'
-                },
+                'Longsor': { icon: 'fa-caret-up', color: '#e67e22', scale: 1.2, rotate: 180 },
+                'Kebakaran': { icon: 'fa-circle', color: '#e74c3c' },
                 'Angin Puting Beliung': { icon: 'fa-wind', color: '#2ecc71' },
                 'Gempa Bumi': { icon: 'fa-asterisk', color: '#9b59b6' },
-                'Tsunami': { icon: 'fa-equals', color: '#34495e', scale: 1.2 },
+                'Tsunami': { icon: 'fa-equals', color: '#34495e', scale: 1.2, rotate: 0 },
                 'Kekeringan': { icon: 'fa-sun', color: '#f1c40f' },
-                'Gunung Meletus': {
-                    html: '<div class="marker-icon-container" style="background-color: transparent; box-shadow: none;"><span style="color: #c0392b; font-size: 24px;">▲</span></div>',
-                    className: 'custom-div-icon'
-                }
+                'Gunung Meletus': { icon: 'fa-caret-up', color: '#c0392b', scale: 1.2, rotate: 0 }
             };
 
             const config = iconConfigs[type] || { icon: 'fa-exclamation-triangle', color: '#95a5a6' };
 
-            // Untuk ikon kustom (Banjir, Longsor, Kebakaran)
-            if (['Banjir', 'Longsor', 'Kebakaran'].includes(type)) {
+            // Khusus untuk banjir
+            if (type === 'Banjir') {
                 return L.divIcon({
                     className: config.className,
                     html: config.html,
@@ -223,10 +178,11 @@
 
             // Untuk jenis bencana lainnya
             const scale = config.scale || 1;
+            const rotate = config.rotate || 0;
             return L.divIcon({
                 className: 'custom-div-icon',
                 html: `<div class="marker-icon-container">
-                        <i class="fas ${config.icon}" style="color: ${config.color}; font-size: ${18 * scale}px;"></i>
+                        <i class="fas ${config.icon}" style="color: ${config.color}; font-size: ${18 * scale}px; transform: rotate(${rotate}deg);"></i>
                       </div>`,
                 iconSize: [36, 36],
                 iconAnchor: [18, 18],
