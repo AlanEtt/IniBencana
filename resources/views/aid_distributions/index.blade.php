@@ -96,11 +96,15 @@
                                 @forelse($distributions as $distribution)
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $distribution->disasterLocation->type }} - {{ $distribution->disasterLocation->location }}</td>
+                                        <td>
+                                            {{ $distribution->disasterLocation->type }} - {{ $distribution->shelterLocation->name }}
+                                            <br>
+                                            <small class="text-muted">{{ $distribution->disasterLocation->location }}</small>
+                                        </td>
                                         <td>{{ $distribution->shelterLocation->name }}</td>
                                         <td>{{ $distribution->aid_type }}</td>
                                         <td>{{ $distribution->quantity }}</td>
-                                        <td>{{ $distribution->date->format('d/m/Y') }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($distribution->date)->format('d/m/Y H:i') }}</td>
                                         <td>
                                             <div class="btn-group" role="group">
                                                 <a href="{{ route('aid-distributions.show', $distribution) }}"

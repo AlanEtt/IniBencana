@@ -7,12 +7,13 @@ use App\Models\DisasterLocation;
 use App\Models\ShelterLocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class AidDistributionController extends Controller
 {
     public function index()
     {
-        $distributions = AidDistribution::with(['disasterLocation', 'shelterLocation'])->get();
+        $distributions = AidDistribution::with(['disasterLocation', 'shelterLocation'])->latest()->get();
         $disasters = DisasterLocation::all();
         $shelters = ShelterLocation::all();
 
@@ -34,7 +35,6 @@ class AidDistributionController extends Controller
                 'shelter_location_id' => 'required|exists:shelter_locations,id',
                 'aid_type' => 'required|string',
                 'quantity' => 'required|integer|min:1',
-                'description' => 'nullable|string',
                 'date' => 'required|date',
             ]);
 
@@ -67,6 +67,9 @@ class AidDistributionController extends Controller
     {
         $disasters = DisasterLocation::all();
         $shelters = ShelterLocation::all();
+
+        $aidDistribution->load(['disasterLocation', 'shelterLocation']);
+
         return view('aid_distributions.edit', compact('aidDistribution', 'disasters', 'shelters'));
     }
 
@@ -78,7 +81,6 @@ class AidDistributionController extends Controller
                 'shelter_location_id' => 'required|exists:shelter_locations,id',
                 'aid_type' => 'required|string',
                 'quantity' => 'required|integer|min:1',
-                'description' => 'nullable|string',
                 'date' => 'required|date',
             ]);
 
