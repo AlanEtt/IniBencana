@@ -39,6 +39,13 @@
                 stroke-dashoffset: -1000;
             }
         }
+        .info-label {
+            font-weight: 600;
+            color: #666;
+        }
+        .detail-card {
+            border-left: 4px solid #3498db;
+        }
     </style>
 @endsection
 
@@ -46,65 +53,145 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0">Detail Distribusi Bantuan</h4>
+                <div>
+                    <a href="{{ route('aid-distributions.edit', $aidDistribution) }}" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <a href="{{ route('aid-distributions.index') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Kembali
+                    </a>
+                </div>
+            </div>
+
             <!-- Peta -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Peta Distribusi Bantuan</h5>
+                    <h5 class="mb-0">Peta Distribusi</h5>
                 </div>
                 <div class="card-body">
                     <div id="map"></div>
                 </div>
             </div>
 
-            <!-- Detail -->
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Detail Distribusi Bantuan</h5>
-                    <div>
-                        <a href="{{ route('aid-distributions.edit', $aidDistribution) }}" class="btn btn-warning">
-                            <i class="bi bi-pencil"></i> Edit
-                        </a>
-                        <a href="{{ route('aid-distributions.index') }}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Kembali
-                        </a>
+            <!-- Informasi Bantuan -->
+            <div class="card mb-4 detail-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Informasi Bantuan</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <span class="info-label">Jenis Bantuan</span>
+                        </div>
+                        <div class="col-md-8">
+                            {{ $aidDistribution->aidType->name }} - {{ $aidDistribution->aidType->category }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <span class="info-label">Jumlah</span>
+                        </div>
+                        <div class="col-md-8">
+                            {{ $aidDistribution->quantity }} {{ $aidDistribution->aidType->unit }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <span class="info-label">Tanggal Distribusi</span>
+                        </div>
+                        <div class="col-md-8">
+                            {{ \Carbon\Carbon::parse($aidDistribution->date)->format('d F Y H:i') }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <span class="info-label">Deskripsi</span>
+                        </div>
+                        <div class="col-md-8">
+                            {{ $aidDistribution->description ?? '-' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informasi Lokasi -->
+            <div class="row">
+                <!-- Lokasi Bencana -->
+                <div class="col-md-6">
+                    <div class="card mb-4 detail-card">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">Lokasi Bencana</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <span class="info-label">Nama Bencana</span><br>
+                                {{ $aidDistribution->disasterLocation->type }}
+                            </div>
+                            <div class="mb-2">
+                                <span class="info-label">Lokasi</span><br>
+                                {{ $aidDistribution->disasterLocation->location }}
+                            </div>
+                            <div class="mb-2">
+                                <span class="info-label">Tingkat Keparahan</span><br>
+                                @php
+                                    $severity = $aidDistribution->disasterLocation->severity;
+                                    if ($severity <= 3) {
+                                        $color = '#27ae60'; // Hijau
+                                    } elseif ($severity <= 6) {
+                                        $color = '#f1c40f'; // Kuning
+                                    } elseif ($severity <= 8) {
+                                        $color = '#e67e22'; // Oranye
+                                    } else {
+                                        $color = '#e74c3c'; // Merah
+                                    }
+                                @endphp
+                                <div class="mt-1">
+                                    <span style="color: {{ $color }}; font-weight: bold;">
+                                        {{ $severity }}/10
+                                    </span>
+                                    <div class="progress" style="height: 10px; width: 200px;">
+                                        <div class="progress-bar"
+                                             role="progressbar"
+                                             style="width: {{ ($severity/10) * 100 }}%; background-color: {{ $color }};"
+                                             aria-valuenow="{{ $severity }}"
+                                             aria-valuemin="0"
+                                             aria-valuemax="10">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <span class="info-label">Deskripsi</span><br>
+                                {{ $aidDistribution->disasterLocation->description }}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="card-body">
-                    <table class="table table-bordered">
-                        <tr>
-                            <th width="200">Lokasi Bencana</th>
-                            <td>
-                                {{ $aidDistribution->disasterLocation->type }} - {{ $aidDistribution->shelterLocation->name }}
-                                <br>
-                                <small class="text-muted">{{ $aidDistribution->disasterLocation->location }}</small>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Shelter Tujuan</th>
-                            <td>{{ $aidDistribution->shelterLocation->name }}</td>
-                        </tr>
-                        <tr>
-                            <th>Jenis Bantuan</th>
-                            <td>{{ $aidDistribution->aid_type }}</td>
-                        </tr>
-                        <tr>
-                            <th>Jumlah</th>
-                            <td>{{ $aidDistribution->quantity }}</td>
-                        </tr>
-                        <tr>
-                            <th>Tanggal</th>
-                            <td>{{ \Carbon\Carbon::parse($aidDistribution->date)->format('d/m/Y H:i') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Tanggal Dibuat</th>
-                            <td>{{ $aidDistribution->created_at->format('d/m/Y H:i') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Terakhir Diupdate</th>
-                            <td>{{ $aidDistribution->updated_at->format('d/m/Y H:i') }}</td>
-                        </tr>
-                    </table>
+                <!-- Shelter Tujuan -->
+                <div class="col-md-6">
+                    <div class="card mb-4 detail-card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">Shelter Tujuan</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <span class="info-label">Nama Shelter</span><br>
+                                {{ $aidDistribution->shelterLocation->name }}
+                            </div>
+                            <div class="mb-2">
+                                <span class="info-label">Kapasitas</span><br>
+                                {{ $aidDistribution->shelterLocation->capacity }} orang
+                            </div>
+                            <div class="mb-2">
+                                <span class="info-label">Fasilitas</span><br>
+                                {{ $aidDistribution->shelterLocation->facilities }}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -122,6 +209,7 @@
             try {
                 // Inisialisasi map
                 const map = L.map('map');
+                let disasterMarker, shelterMarker, distributionLine;
 
                 // Tambahkan tile layer
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -151,12 +239,14 @@
                     popupAnchor: [0, -18]
                 });
 
-                // Tambahkan marker untuk lokasi bencana
-                const disasterMarker = L.marker(
-                    [{{ $aidDistribution->disasterLocation->latitude }}, {{ $aidDistribution->disasterLocation->longitude }}],
-                    { icon: disasterIcon }
-                ).addTo(map);
+                // Koordinat lokasi
+                const disasterLat = {{ $aidDistribution->disasterLocation->latitude }};
+                const disasterLng = {{ $aidDistribution->disasterLocation->longitude }};
+                const shelterLat = {{ $aidDistribution->shelterLocation->latitude }};
+                const shelterLng = {{ $aidDistribution->shelterLocation->longitude }};
 
+                // Tambah marker bencana
+                disasterMarker = L.marker([disasterLat, disasterLng], { icon: disasterIcon }).addTo(map);
                 disasterMarker.bindPopup(`
                     <div class="custom-popup">
                         <h6>{{ $aidDistribution->disasterLocation->type }}</h6>
@@ -164,23 +254,19 @@
                     </div>
                 `);
 
-                // Tambahkan marker untuk shelter
-                const shelterMarker = L.marker(
-                    [{{ $aidDistribution->shelterLocation->latitude }}, {{ $aidDistribution->shelterLocation->longitude }}],
-                    { icon: shelterIcon }
-                ).addTo(map);
-
+                // Tambah marker shelter
+                shelterMarker = L.marker([shelterLat, shelterLng], { icon: shelterIcon }).addTo(map);
                 shelterMarker.bindPopup(`
                     <div class="custom-popup">
                         <h6>{{ $aidDistribution->shelterLocation->name }}</h6>
-                        <p>Shelter Tujuan</p>
+                        <p>Kapasitas: {{ $aidDistribution->shelterLocation->capacity }} orang</p>
                     </div>
                 `);
 
-                // Tambahkan garis distribusi
-                const distributionLine = L.polyline([
-                    [{{ $aidDistribution->disasterLocation->latitude }}, {{ $aidDistribution->disasterLocation->longitude }}],
-                    [{{ $aidDistribution->shelterLocation->latitude }}, {{ $aidDistribution->shelterLocation->longitude }}]
+                // Tambah garis distribusi
+                distributionLine = L.polyline([
+                    [disasterLat, disasterLng],
+                    [shelterLat, shelterLng]
                 ], {
                     color: '#3498db',
                     weight: 3,
@@ -191,8 +277,8 @@
 
                 // Sesuaikan bounds peta
                 const bounds = L.latLngBounds(
-                    [{{ $aidDistribution->disasterLocation->latitude }}, {{ $aidDistribution->disasterLocation->longitude }}],
-                    [{{ $aidDistribution->shelterLocation->latitude }}, {{ $aidDistribution->shelterLocation->longitude }}]
+                    [disasterLat, disasterLng],
+                    [shelterLat, shelterLng]
                 );
                 map.fitBounds(bounds, { padding: [50, 50] });
 

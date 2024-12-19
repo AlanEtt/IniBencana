@@ -5,6 +5,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
 
     <style>
         #map {
@@ -26,21 +28,7 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
         .marker-icon-container i {
-            font-size: 18px;
-        }
-        .banjir-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-        }
-        .banjir-icon::before {
-            content: "";
-            width: 20px;
-            height: 4px;
-            background-color: #3498db;
-            box-shadow: 0 -8px 0 #3498db, 0 8px 0 #3498db;
+            font-size: 20px;
         }
     </style>
 @endsection
@@ -90,8 +78,8 @@
                             <div id="map" class="mb-2 border rounded"></div>
                             <input type="hidden" name="location" id="location"
                                 class="@error('location') is-invalid @enderror"
-                                value="{{ old('location', $disaster->location) }}" required>
-                            <small class="text-muted">Koordinat yang dipilih: <span id="selectedCoords">{{ $disaster->location }}</span></small>
+                                value="{{ old('location', $disaster->formatted_location) }}" required>
+                            <small class="text-muted">Koordinat yang dipilih: <span id="selectedCoords">{{ $disaster->formatted_location }}</span></small>
                             @error('location')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -111,7 +99,7 @@
                             <label for="date" class="form-label">Tanggal Kejadian</label>
                             <input type="datetime-local" name="date" id="date"
                                 class="form-control @error('date') is-invalid @enderror"
-                                value="{{ old('date', date('Y-m-d\TH:i', strtotime($disaster->date))) }}" required>
+                                value="{{ old('date', \Carbon\Carbon::parse($disaster->date)->format('Y-m-d\TH:i')) }}" required>
                             @error('date')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -151,38 +139,48 @@
         function getDisasterIcon(type) {
             const iconConfigs = {
                 'Banjir': {
-                    html: '<div class="banjir-icon"></div>',
-                    className: 'custom-div-icon'
+                    icon: 'bi-water',
+                    color: '#3498db'
                 },
-                'Longsor': { icon: 'fa-caret-up', color: '#e67e22', scale: 1.2, rotate: 180 },
-                'Kebakaran': { icon: 'fa-circle', color: '#e74c3c' },
-                'Angin Puting Beliung': { icon: 'fa-wind', color: '#2ecc71' },
-                'Gempa Bumi': { icon: 'fa-asterisk', color: '#9b59b6' },
-                'Tsunami': { icon: 'fa-equals', color: '#34495e', scale: 1.2, rotate: 0 },
-                'Kekeringan': { icon: 'fa-sun', color: '#f1c40f' },
-                'Gunung Meletus': { icon: 'fa-caret-up', color: '#c0392b', scale: 1.2, rotate: 0 }
+                'Longsor': {
+                    icon: 'bi-triangle-fill',
+                    color: '#e67e22'
+                },
+                'Kebakaran': {
+                    icon: 'bi-fire',
+                    color: '#e74c3c'
+                },
+                'Angin Puting Beliung': {
+                    icon: 'bi-wind',
+                    color: '#2ecc71'
+                },
+                'Gempa Bumi': {
+                    icon: 'bi-exclamation-triangle-fill',
+                    color: '#9b59b6'
+                },
+                'Tsunami': {
+                    icon: 'bi-water',
+                    color: '#34495e'
+                },
+                'Kekeringan': {
+                    icon: 'bi-sun',
+                    color: '#f1c40f'
+                },
+                'Gunung Meletus': {
+                    icon: 'bi-triangle-fill',
+                    color: '#c0392b'
+                }
             };
 
-            const config = iconConfigs[type] || { icon: 'fa-exclamation-triangle', color: '#95a5a6' };
+            const config = iconConfigs[type] || {
+                icon: 'bi-exclamation-triangle-fill',
+                color: '#95a5a6'
+            };
 
-            // Khusus untuk banjir
-            if (type === 'Banjir') {
-                return L.divIcon({
-                    className: config.className,
-                    html: config.html,
-                    iconSize: [36, 36],
-                    iconAnchor: [18, 18],
-                    popupAnchor: [0, -18]
-                });
-            }
-
-            // Untuk jenis bencana lainnya
-            const scale = config.scale || 1;
-            const rotate = config.rotate || 0;
             return L.divIcon({
                 className: 'custom-div-icon',
                 html: `<div class="marker-icon-container">
-                        <i class="fas ${config.icon}" style="color: ${config.color}; font-size: ${18 * scale}px; transform: rotate(${rotate}deg);"></i>
+                        <i class="bi ${config.icon}" style="color: ${config.color};"></i>
                       </div>`,
                 iconSize: [36, 36],
                 iconAnchor: [18, 18],
@@ -198,78 +196,79 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Ambil koordinat awal dari data disaster
-            const coordinates = '{{ $disaster->location }}'.split(',');
-            const initialLat = parseFloat(coordinates[0]);
-            const initialLng = parseFloat(coordinates[1]);
+            try {
+                // Ambil koordinat awal dari data disaster
+                const initialLocation = document.getElementById('location').value;
+                const [initialLat, initialLng] = initialLocation.split(',').map(coord => parseFloat(coord.trim()));
 
-            // Inisialisasi map
-            map = L.map('map', {
-                center: [initialLat, initialLng],
-                zoom: 15,
-                zoomControl: true,
-                scrollWheelZoom: true
-            });
-
-            // Tambahkan tile layer
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(map);
-
-            // Tambahkan marker awal dengan icon sesuai jenis bencana
-            const initialType = document.getElementById('type').value;
-            marker = L.marker([initialLat, initialLng], {
-                icon: getDisasterIcon(initialType),
-                draggable: true
-            }).addTo(map);
-
-            // Update koordinat saat marker di-drag
-            marker.on('dragend', function(e) {
-                const position = marker.getLatLng();
-                document.getElementById('location').value = `${position.lat},${position.lng}`;
-                document.getElementById('selectedCoords').textContent = `${position.lat}, ${position.lng}`;
-            });
-
-            // Event handler untuk klik pada map
-            map.on('click', function(e) {
-                const lat = e.latlng.lat;
-                const lng = e.latlng.lng;
-                const currentType = document.getElementById('type').value;
-
-                // Hapus marker lama
-                if (marker) {
-                    map.removeLayer(marker);
+                if (!initialLat || !initialLng || isNaN(initialLat) || isNaN(initialLng)) {
+                    throw new Error('Koordinat tidak valid');
                 }
 
-                // Tambah marker baru dengan icon sesuai jenis bencana
-                marker = L.marker([lat, lng], {
-                    icon: getDisasterIcon(currentType),
-                    draggable: true
+                // Inisialisasi map
+                map = L.map('map').setView([initialLat, initialLng], 15);
+
+                // Tambahkan tile layer
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 }).addTo(map);
 
-                // Update nilai input hidden dan tampilkan koordinat
-                document.getElementById('location').value = `${lat},${lng}`;
-                document.getElementById('selectedCoords').textContent = `${lat}, ${lng}`;
+                // Tambahkan marker awal dengan icon sesuai jenis bencana
+                const initialType = document.getElementById('type').value;
+                marker = L.marker([initialLat, initialLng], {
+                    icon: getDisasterIcon(initialType),
+                    draggable: true
+                }).addTo(map);
 
                 // Update koordinat saat marker di-drag
                 marker.on('dragend', function(e) {
                     const position = marker.getLatLng();
-                    document.getElementById('location').value = `${position.lat},${position.lng}`;
-                    document.getElementById('selectedCoords').textContent = `${position.lat}, ${position.lng}`;
+                    const newLocation = `${position.lat},${position.lng}`;
+                    document.getElementById('location').value = newLocation;
+                    document.getElementById('selectedCoords').textContent = newLocation;
                 });
-            });
 
-            // Tambahkan event listener untuk perubahan jenis bencana
-            document.getElementById('type').addEventListener('change', function(e) {
-                const newType = e.target.value;
-                updateMarkerIcon(newType);
-            });
+                // Event handler untuk klik pada map
+                map.on('click', function(e) {
+                    const lat = e.latlng.lat;
+                    const lng = e.latlng.lng;
+                    const newLocation = `${lat},${lng}`;
+                    const currentType = document.getElementById('type').value;
 
-            // Invalidate size setelah map dimuat
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 250);
+                    // Update hidden input dan text display
+                    document.getElementById('location').value = newLocation;
+                    document.getElementById('selectedCoords').textContent = newLocation;
+
+                    // Hapus marker lama
+                    if (marker) {
+                        map.removeLayer(marker);
+                    }
+
+                    // Tambah marker baru
+                    marker = L.marker([lat, lng], {
+                        icon: getDisasterIcon(currentType),
+                        draggable: true
+                    }).addTo(map);
+
+                    // Update koordinat saat marker di-drag
+                    marker.on('dragend', function(e) {
+                        const position = marker.getLatLng();
+                        const dragLocation = `${position.lat},${position.lng}`;
+                        document.getElementById('location').value = dragLocation;
+                        document.getElementById('selectedCoords').textContent = dragLocation;
+                    });
+                });
+
+                // Event listener untuk perubahan jenis bencana
+                document.getElementById('type').addEventListener('change', function() {
+                    updateMarkerIcon(this.value);
+                });
+
+            } catch (error) {
+                console.error('Error initializing map:', error);
+                alert('Terjadi kesalahan saat memuat peta. Silakan refresh halaman.');
+            }
         });
     </script>
 @endsection

@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('disaster_location_id')->constrained()->onDelete('cascade');
             $table->foreignId('shelter_location_id')->constrained()->onDelete('cascade');
-            $table->string('aid_type');
+            $table->foreignId('aid_type_id')->constrained('aid_types')->onDelete('cascade');
             $table->integer('quantity');
             $table->text('description')->nullable();
             $table->date('date');

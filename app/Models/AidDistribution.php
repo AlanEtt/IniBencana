@@ -12,7 +12,7 @@ class AidDistribution extends Model
     protected $fillable = [
         'disaster_location_id',
         'shelter_location_id',
-        'aid_type',
+        'aid_type_id',
         'quantity',
         'description',
         'date'
@@ -30,5 +30,10 @@ class AidDistribution extends Model
     public function shelterLocation()
     {
         return $this->belongsTo(ShelterLocation::class);
+    }
+
+    public function aidType()
+    {
+        return $this->belongsTo(AidType::class);
     }
 }

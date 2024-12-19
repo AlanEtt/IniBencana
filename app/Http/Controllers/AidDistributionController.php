@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AidDistribution;
 use App\Models\DisasterLocation;
 use App\Models\ShelterLocation;
+use App\Models\AidType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -13,7 +14,7 @@ class AidDistributionController extends Controller
 {
     public function index()
     {
-        $distributions = AidDistribution::with(['disasterLocation', 'shelterLocation'])->latest()->get();
+        $distributions = AidDistribution::with(['disasterLocation', 'shelterLocation', 'aidType'])->latest()->get();
         $disasters = DisasterLocation::all();
         $shelters = ShelterLocation::all();
 
@@ -24,7 +25,8 @@ class AidDistributionController extends Controller
     {
         $disasters = DisasterLocation::all();
         $shelters = ShelterLocation::all();
-        return view('aid_distributions.create', compact('disasters', 'shelters'));
+        $aidTypes = AidType::all();
+        return view('aid_distributions.create', compact('disasters', 'shelters', 'aidTypes'));
     }
 
     public function store(Request $request)
@@ -33,7 +35,7 @@ class AidDistributionController extends Controller
             $validated = $request->validate([
                 'disaster_location_id' => 'required|exists:disaster_locations,id',
                 'shelter_location_id' => 'required|exists:shelter_locations,id',
-                'aid_type' => 'required|string',
+                'aid_type_id' => 'required|exists:aid_types,id',
                 'quantity' => 'required|integer|min:1',
                 'date' => 'required|date',
             ]);
@@ -59,7 +61,7 @@ class AidDistributionController extends Controller
 
     public function show(AidDistribution $aidDistribution)
     {
-        $aidDistribution->load(['disasterLocation', 'shelterLocation']);
+        $aidDistribution->load(['disasterLocation', 'shelterLocation', 'aidType']);
         return view('aid_distributions.show', compact('aidDistribution'));
     }
 
@@ -67,10 +69,11 @@ class AidDistributionController extends Controller
     {
         $disasters = DisasterLocation::all();
         $shelters = ShelterLocation::all();
+        $aidTypes = AidType::all();
 
         $aidDistribution->load(['disasterLocation', 'shelterLocation']);
 
-        return view('aid_distributions.edit', compact('aidDistribution', 'disasters', 'shelters'));
+        return view('aid_distributions.edit', compact('aidDistribution', 'disasters', 'shelters', 'aidTypes'));
     }
 
     public function update(Request $request, AidDistribution $aidDistribution)
@@ -79,7 +82,7 @@ class AidDistributionController extends Controller
             $validated = $request->validate([
                 'disaster_location_id' => 'required|exists:disaster_locations,id',
                 'shelter_location_id' => 'required|exists:shelter_locations,id',
-                'aid_type' => 'required|string',
+                'aid_type_id' => 'required|exists:aid_types,id',
                 'quantity' => 'required|integer|min:1',
                 'date' => 'required|date',
             ]);

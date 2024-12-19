@@ -104,19 +104,17 @@
                         </div>
 
                         <div class="form-group mb-3">
-                            <label for="aid_type" class="form-label">Jenis Bantuan</label>
-                            <select name="aid_type" id="aid_type"
-                                class="form-select @error('aid_type') is-invalid @enderror" required>
+                            <label for="aid_type_id" class="form-label">Jenis Bantuan</label>
+                            <select name="aid_type_id" id="aid_type_id"
+                                class="form-select @error('aid_type_id') is-invalid @enderror" required>
                                 <option value="">Pilih Jenis Bantuan</option>
-                                <option value="Makanan">Makanan</option>
-                                <option value="Minuman">Minuman</option>
-                                <option value="Pakaian">Pakaian</option>
-                                <option value="Obat-obatan">Obat-obatan</option>
-                                <option value="Selimut">Selimut</option>
-                                <option value="Tenda">Tenda</option>
-                                <option value="Lainnya">Lainnya</option>
+                                @foreach($aidTypes as $aidType)
+                                    <option value="{{ $aidType->id }}">
+                                        {{ $aidType->name }} - {{ $aidType->category }} ({{ $aidType->unit }})
+                                    </option>
+                                @endforeach
                             </select>
-                            @error('aid_type')
+                            @error('aid_type_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>

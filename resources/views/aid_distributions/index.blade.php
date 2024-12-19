@@ -94,7 +94,12 @@
                             </thead>
                             <tbody>
                                 @forelse($distributions as $distribution)
-                                    <tr>
+                                    <tr class="distribution-row"
+                                        data-disaster-lat="{{ $distribution->disasterLocation->latitude }}"
+                                        data-disaster-lng="{{ $distribution->disasterLocation->longitude }}"
+                                        data-shelter-lat="{{ $distribution->shelterLocation->latitude }}"
+                                        data-shelter-lng="{{ $distribution->shelterLocation->longitude }}"
+                                        style="cursor: pointer;">
                                         <td>{{ $loop->iteration }}</td>
                                         <td>
                                             {{ $distribution->disasterLocation->type }} - {{ $distribution->shelterLocation->name }}
@@ -102,7 +107,7 @@
                                             <small class="text-muted">{{ $distribution->disasterLocation->location }}</small>
                                         </td>
                                         <td>{{ $distribution->shelterLocation->name }}</td>
-                                        <td>{{ $distribution->aid_type }}</td>
+                                        <td>{{ $distribution->aidType->name }}</td>
                                         <td>{{ $distribution->quantity }}</td>
                                         <td>{{ \Carbon\Carbon::parse($distribution->date)->format('d/m/Y H:i') }}</td>
                                         <td>
@@ -189,12 +194,18 @@
                 // Simpan semua bounds untuk fit map
                 const bounds = [];
 
+                // Simpan referensi marker dalam objek untuk akses mudah
+                const markers = {};
+                const lines = {};
+
                 // Tambahkan marker untuk setiap shelter
                 @foreach($shelters as $shelter)
                     const shelterMarker{{ $shelter->id }} = L.marker(
                         [{{ $shelter->latitude }}, {{ $shelter->longitude }}],
                         { icon: shelterIcon }
                     ).addTo(map);
+
+                    markers['shelter_{{ $shelter->id }}'] = shelterMarker{{ $shelter->id }};
 
                     shelterMarker{{ $shelter->id }}.bindPopup(`
                         <div class="custom-popup">
@@ -212,6 +223,8 @@
                         [{{ $disaster->latitude }}, {{ $disaster->longitude }}],
                         { icon: disasterIcon }
                     ).addTo(map);
+
+                    markers['disaster_{{ $disaster->id }}'] = disasterMarker{{ $disaster->id }};
 
                     disasterMarker{{ $disaster->id }}.bindPopup(`
                         <div class="custom-popup">
@@ -235,6 +248,8 @@
                         dashArray: '10, 10',
                         className: 'distribution-line'
                     }).addTo(map);
+
+                    lines['distribution_{{ $distribution->id }}'] = line{{ $distribution->id }};
 
                     line{{ $distribution->id }}.bindPopup(`
                         <div class="custom-popup">
@@ -288,6 +303,39 @@
 
                 // Invalidate size setelah map dimuat
                 setTimeout(function(){ map.invalidateSize()}, 100);
+
+                // Event handler untuk klik pada baris tabel
+                document.querySelectorAll('.distribution-row').forEach(row => {
+                    row.addEventListener('click', function() {
+                        const disasterLat = parseFloat(this.dataset.disasterLat);
+                        const disasterLng = parseFloat(this.dataset.disasterLng);
+                        const shelterLat = parseFloat(this.dataset.shelterLat);
+                        const shelterLng = parseFloat(this.dataset.shelterLng);
+
+                        // Buat bounds yang mencakup kedua lokasi
+                        const locationBounds = L.latLngBounds(
+                            [disasterLat, disasterLng],
+                            [shelterLat, shelterLng]
+                        );
+
+                        // Tambahkan padding untuk memastikan kedua marker terlihat
+                        map.flyToBounds(locationBounds, {
+                            padding: [50, 50],
+                            duration: 1.5 // durasi animasi dalam detik
+                        });
+
+                        // Buka popup untuk kedua lokasi
+                        Object.values(markers).forEach(marker => {
+                            const markerLatLng = marker.getLatLng();
+                            if (
+                                (markerLatLng.lat === disasterLat && markerLatLng.lng === disasterLng) ||
+                                (markerLatLng.lat === shelterLat && markerLatLng.lng === shelterLng)
+                            ) {
+                                marker.openPopup();
+                            }
+                        });
+                    });
+                });
 
             } catch (err) {
                 console.error('Error initializing map:', err);

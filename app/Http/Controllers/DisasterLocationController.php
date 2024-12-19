@@ -76,6 +76,8 @@ class DisasterLocationController extends Controller
 
     public function edit(DisasterLocation $disaster)
     {
+        // Format koordinat untuk ditampilkan di form
+        $disaster->formatted_location = $disaster->latitude . ',' . $disaster->longitude;
         return view('disasters.edit', compact('disaster'));
     }
 
@@ -83,32 +85,44 @@ class DisasterLocationController extends Controller
     {
         try {
             $validated = $request->validate([
-                'type' => 'required',
-                'location' => 'required',
-                'description' => 'nullable',
+                'type' => 'required|string',
+                'location' => 'required|string', // Format: "latitude,longitude"
+                'description' => 'required|string',
                 'date' => 'required|date',
                 'severity' => 'required|integer|between:1,10',
             ]);
 
-            $coordinates = $request->location;
-            list($lat, $lng) = explode(',', $coordinates);
+            // Parse koordinat dari input location
+            $coordinates = explode(',', $request->location);
+            if (count($coordinates) !== 2) {
+                throw new \Exception('Format koordinat tidak valid');
+            }
 
+            $latitude = trim($coordinates[0]);
+            $longitude = trim($coordinates[1]);
+
+            // Validasi koordinat
+            if (!is_numeric($latitude) || !is_numeric($longitude)) {
+                throw new \Exception('Koordinat harus berupa angka');
+            }
+
+            // Update data bencana
             $disaster->update([
                 'type' => $request->type,
                 'location' => $request->location,
                 'description' => $request->description,
                 'date' => $request->date,
                 'severity' => $request->severity,
-                'latitude' => $lat,
-                'longitude' => $lng,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
             ]);
 
             return redirect()
                 ->route('disasters.index')
-                ->with('success', 'Bencana berhasil diperbarui.');
+                ->with('success', 'Data bencana berhasil diperbarui.');
 
         } catch (\Exception $e) {
-            Log::error('Error saat update data:', [
+            Log::error('Error saat update data bencana:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

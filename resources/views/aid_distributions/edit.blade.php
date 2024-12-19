@@ -113,16 +113,17 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="aid_type" class="form-label">Jenis Bantuan</label>
-                            <select name="aid_type" id="aid_type" class="form-select @error('aid_type') is-invalid @enderror" required>
+                            <label for="aid_type_id" class="form-label">Jenis Bantuan</label>
+                            <select name="aid_type_id" id="aid_type_id" class="form-select @error('aid_type_id') is-invalid @enderror" required>
                                 <option value="">Pilih Jenis Bantuan</option>
-                                <option value="Makanan" {{ old('aid_type', $aidDistribution->aid_type) == 'Makanan' ? 'selected' : '' }}>Makanan</option>
-                                <option value="Pakaian" {{ old('aid_type', $aidDistribution->aid_type) == 'Pakaian' ? 'selected' : '' }}>Pakaian</option>
-                                <option value="Obat-obatan" {{ old('aid_type', $aidDistribution->aid_type) == 'Obat-obatan' ? 'selected' : '' }}>Obat-obatan</option>
-                                <option value="Peralatan" {{ old('aid_type', $aidDistribution->aid_type) == 'Peralatan' ? 'selected' : '' }}>Peralatan</option>
-                                <option value="Lainnya" {{ old('aid_type', $aidDistribution->aid_type) == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
+                                @foreach($aidTypes as $aidType)
+                                    <option value="{{ $aidType->id }}"
+                                            {{ old('aid_type_id', $aidDistribution->aid_type_id) == $aidType->id ? 'selected' : '' }}>
+                                        {{ $aidType->name }} - {{ $aidType->category }} ({{ $aidType->unit }})
+                                    </option>
+                                @endforeach
                             </select>
-                            @error('aid_type')
+                            @error('aid_type_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
